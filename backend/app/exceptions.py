@@ -545,3 +545,18 @@ class ResourceConflictException(CognitiveNexusBaseException):
                 "resource_id": resource_id,
             },
         )
+class AppBaseException(Exception):
+    """Base exception class for all custom errors in Cognitive Data Nexus."""
+    pass
+
+class UnreadableDocumentError(AppBaseException):
+    """Raised when a document format is unsupported or parsing fails completely."""
+    pass
+
+class EmbeddingGenerationError(AppBaseException):
+    """Raised when the local vector model fails to compute text matrices."""
+    pass
+
+class VectorStorageError(AppBaseException):
+    """Raised when ChromaDB drops a write or read sequence."""
+    pass
