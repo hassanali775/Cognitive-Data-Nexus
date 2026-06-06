@@ -38,7 +38,7 @@
             "type": "UTILIZES",
             "properties": {
                 "context_raw": "The foundational engine utilizes an air-gapped Sentence-Transformer model for multi-format",
-                "created_at": "2026-06-06T16:03:27.919515"
+                "created_at": "2026-06-06T16:13:58.002578"
             }
         },
         {
@@ -47,7 +47,7 @@
             "type": "HANDLES",
             "properties": {
                 "context_raw": "Vector persistence handles geometric distances locally within a customized ChromaDB",
-                "created_at": "2026-06-06T16:03:27.919515"
+                "created_at": "2026-06-06T16:13:58.002578"
             }
         },
         {
@@ -56,7 +56,7 @@
             "type": "USES",
             "properties": {
                 "context_raw": "The core pipeline uses ChromaDB to store vector embeddings",
-                "created_at": "2026-06-06T16:03:27.919515"
+                "created_at": "2026-06-06T16:13:58.002578"
             }
         }
     ]

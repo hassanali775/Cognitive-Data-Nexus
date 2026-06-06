@@ -7,9 +7,10 @@ from app.services.vector_store import VectorStoreService
 from app.services.graph_service import KnowledgeGraphService
 from app.services.extraction_service import RuleBasedGraphExtractor
 from app.services.hybrid_search import HybridSearchService
+from app.services.llm_service import LocalLLMService
 
 async def main():
-    print("⚡ Starting Cognitive-Data-Nexus Phase 3 E2E Hybrid System Verification...")
+    print("⚡ Executing Full Cognitive-Data-Nexus Production Pipeline Ingestion...")
     
     test_file_path = "./sample_insight.txt"
     sample_data = """
@@ -23,7 +24,7 @@ async def main():
     with open(test_file_path, "w", encoding="utf-8") as f:
         f.write(sample_data.strip())
         
-    print(f"✅ Created mock text payload asset at: {test_file_path}")
+    print(f"✅ Document Payload Staged: {test_file_path}")
 
     # Initialize complete localized architectural stack
     doc_processor = DocumentProcessorService()
@@ -33,30 +34,24 @@ async def main():
     graph_db = KnowledgeGraphService()
     extractor = RuleBasedGraphExtractor()
     
-    # Initialize our Phase 3 Hybrid Search Orchestrator
-    hybrid_searcher = HybridSearchService(
-        vector_store=vector_db, 
-        graph_store=graph_db, 
-        embedding_service=embedder
-    )
+    # Advanced Phase 3 & 4 Services
+    hybrid_searcher = HybridSearchService(vector_store=vector_db, graph_store=graph_db, embedding_service=embedder)
+    local_brain = LocalLLMService()
 
     try:
-        # 1. Parse Ingestion
-        print("➡️  Executing Document Extractor Engine...")
+        # Ingestion Phases
+        print("➡️  Parsing raw content matrices...")
         clean_text = await doc_processor.extract_text(test_file_path)
         
-        # 2. Chunk Ingestion
-        print("➡️  Running Recursive Sliding-Window Chunker...")
-        chunks = chunker.create_chunks(document_id="doc_final_999", text=clean_text, metadata={"source": "hybrid_e2e"})
+        print("➡️  Chunking and compiling semantic sliding windows...")
+        chunks = chunker.create_chunks(document_id="doc_prod_001", text=clean_text, metadata={"source": "production"})
 
-        # 3. Embedding Vector Generation & Insertion
-        print("➡️  Encoding and storing vector data in ChromaDB...")
+        print("➡️  Generating dense embedding vectors & synchronizing ChromaDB...")
         raw_texts = [c.content for c in chunks]
         embeddings = embedder.generate_embeddings_batch(raw_texts)
         vector_db.upsert_chunks(chunks, embeddings)
 
-        # 4. Graph Generation
-        print("➡️  Processing structural semantic graph layers via NetworkX...")
+        print("➡️  Analyzing semantic connections & updating NetworkX Graph Topology...")
         for chunk in chunks:
             nodes, relationships = extractor.extract_from_text(chunk.content)
             for node in nodes:
@@ -65,24 +60,25 @@ async def main():
                 graph_db.add_relationship(rel)
         graph_db.save_graph()
 
-        # 5. Advanced Hybrid Search Verification Rule
-        print("\n🔎 EXECUTING HYBRID SEARCH QUERY...")
-        target_query = "How does vector persistence utilize ChromaDB?"
+        # Hybrid Context Synthesis
+        target_query = "Explain how the core pipeline interacts with ChromaDB based on the architecture rules."
+        print(f"\n🔎 Querying Hybrid Fusion Layer for: '{target_query}'")
         search_payload = hybrid_searcher.search(query=target_query, limit=2)
-        
-        print(f"\n🎯 Search Target Query: '{target_query}'")
-        print("\n--- 🌐 RETRIEVED VECTOR CONTEXTS (Geometric Space) ---")
-        for idx, doc in enumerate(search_payload["vector_context"]):
-            print(f" [{idx + 1}] {doc.strip()}")
-            
-        print("\n--- 🗺️ RETRIEVED GRAPH CONTEXTS (Topological Web) ---")
-        for idx, edge in enumerate(search_payload["graph_context"]):
-            print(f" [{idx + 1}] {edge}")
 
-        print("\n🎉 PHASE 3 INTEGRATION: HYBRID SEARCH PIPELINE 100% OPERATIONAL!")
+        # Local Generation Phase
+        print("🤖 Invoking Localized Llama3 Inference Engine via Ollama...")
+        final_response = local_brain.generate_answer(
+            query=target_query,
+            vector_context=search_payload["vector_context"],
+            graph_context=search_payload["graph_context"]
+        )
+
+        print("\n======================= 🪐 COGNITIVE DATA NEXUS ANSWER =======================")
+        print(final_response)
+        print("==============================================================================")
+        print("\n🎉 BACKEND ENGINE INTEGRATION: 100% COMPLETE AND SUCCESSFUL!")
 
     finally:
-        # Clean up text asset footprint
         if os.path.exists(test_file_path):
             os.remove(test_file_path)
 
