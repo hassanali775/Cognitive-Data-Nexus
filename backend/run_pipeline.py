@@ -6,9 +6,10 @@ from app.services.embedding_service import EmbeddingService
 from app.services.vector_store import VectorStoreService
 from app.services.graph_service import KnowledgeGraphService
 from app.services.extraction_service import RuleBasedGraphExtractor
+from app.services.hybrid_search import HybridSearchService
 
 async def main():
-    print("⚡ Starting Cognitive-Data-Nexus Phase 2 E2E Verification...")
+    print("⚡ Starting Cognitive-Data-Nexus Phase 3 E2E Hybrid System Verification...")
     
     test_file_path = "./sample_insight.txt"
     sample_data = """
@@ -24,50 +25,61 @@ async def main():
         
     print(f"✅ Created mock text payload asset at: {test_file_path}")
 
-    # Initialize complete localized architectural stack (Vector + Graph)
+    # Initialize complete localized architectural stack
     doc_processor = DocumentProcessorService()
     chunker = ChunkingService(chunk_size=15, chunk_overlap=3)
     embedder = EmbeddingService()
     vector_db = VectorStoreService()
     graph_db = KnowledgeGraphService()
     extractor = RuleBasedGraphExtractor()
+    
+    # Initialize our Phase 3 Hybrid Search Orchestrator
+    hybrid_searcher = HybridSearchService(
+        vector_store=vector_db, 
+        graph_store=graph_db, 
+        embedding_service=embedder
+    )
 
     try:
-        # 1. Parse and Cleaning
+        # 1. Parse Ingestion
         print("➡️  Executing Document Extractor Engine...")
         clean_text = await doc_processor.extract_text(test_file_path)
         
         # 2. Chunk Ingestion
         print("➡️  Running Recursive Sliding-Window Chunker...")
-        chunks = chunker.create_chunks(document_id="doc_test_002", text=clean_text, metadata={"source": "graph_e2e"})
-        print(f"📊 Generated {len(chunks)} structural context chunks.")
+        chunks = chunker.create_chunks(document_id="doc_final_999", text=clean_text, metadata={"source": "hybrid_e2e"})
 
-        # 3. Embedding Generation & Vector Injection
+        # 3. Embedding Vector Generation & Insertion
         print("➡️  Encoding and storing vector data in ChromaDB...")
         raw_texts = [c.content for c in chunks]
         embeddings = embedder.generate_embeddings_batch(raw_texts)
         vector_db.upsert_chunks(chunks, embeddings)
 
-        # 4. Phase 2 Innovation: Knowledge Graph Extraction
+        # 4. Graph Generation
         print("➡️  Processing structural semantic graph layers via NetworkX...")
         for chunk in chunks:
             nodes, relationships = extractor.extract_from_text(chunk.content)
-            
             for node in nodes:
                 graph_db.add_entity(node)
             for rel in relationships:
                 graph_db.add_relationship(rel)
-                
         graph_db.save_graph()
-        print(f"✅ Knowledge Graph generated! Saved to: {graph_db.storage_path}")
-        print(f"📈 Graph Metrics: {len(graph_db.graph.nodes)} unique nodes, {len(graph_db.graph.edges)} directed edges.")
 
-        # Print out the extracted relations to verify visually
-        print("\n🌐 Extracted Knowledge Graph Edge Connections:")
-        for u, v, data in graph_db.graph.edges(data=True):
-            print(f"   [{u}] --({data['type']})--> [{v}]")
+        # 5. Advanced Hybrid Search Verification Rule
+        print("\n🔎 EXECUTING HYBRID SEARCH QUERY...")
+        target_query = "How does vector persistence utilize ChromaDB?"
+        search_payload = hybrid_searcher.search(query=target_query, limit=2)
+        
+        print(f"\n🎯 Search Target Query: '{target_query}'")
+        print("\n--- 🌐 RETRIEVED VECTOR CONTEXTS (Geometric Space) ---")
+        for idx, doc in enumerate(search_payload["vector_context"]):
+            print(f" [{idx + 1}] {doc.strip()}")
+            
+        print("\n--- 🗺️ RETRIEVED GRAPH CONTEXTS (Topological Web) ---")
+        for idx, edge in enumerate(search_payload["graph_context"]):
+            print(f" [{idx + 1}] {edge}")
 
-        print("\n🎉 PHASE 2 INTEGRATION: KNOWLEDGE GRAPH INGESTION SUCCESSFUL!")
+        print("\n🎉 PHASE 3 INTEGRATION: HYBRID SEARCH PIPELINE 100% OPERATIONAL!")
 
     finally:
         # Clean up text asset footprint
