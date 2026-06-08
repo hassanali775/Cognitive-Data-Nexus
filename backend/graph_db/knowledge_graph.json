@@ -34,6 +34,14 @@
             "id": "geometric distances locally within",
             "type": "TECHNOLOGY",
             "properties": {}
+        },
+        {
+            "id": "ChromaDB",
+            "type": "DATA STORE",
+            "properties": {
+                "document_id": "doc_1780951543",
+                "source_file": "New Text Document.txt"
+            }
         }
     ],
     "edges": [
@@ -61,7 +69,16 @@
             "type": "HANDLES",
             "properties": {
                 "context_raw": "Vector persistence handles geometric distances locally within",
-                "created_at": "2026-06-06T22:31:49.903019"
+                "created_at": "2026-06-08T20:43:10.077368"
+            }
+        },
+        {
+            "source": "Vector persistence",
+            "target": "ChromaDB",
+            "type": "HANDLES_LOCALLY",
+            "properties": {
+                "document_id": "doc_1780951543",
+                "created_at": "2026-06-08T20:46:40.129801"
             }
         },
         {
@@ -70,7 +87,16 @@
             "type": "USES",
             "properties": {
                 "context_raw": "The core pipeline uses ChromaDB to store vector embeddings",
-                "created_at": "2026-06-06T22:31:49.903019"
+                "created_at": "2026-06-08T20:43:10.077368"
+            }
+        },
+        {
+            "source": "core pipeline",
+            "target": "ChromaDB",
+            "type": "USES",
+            "properties": {
+                "document_id": "doc_1780951543",
+                "created_at": "2026-06-08T20:46:40.129801"
             }
         }
     ]

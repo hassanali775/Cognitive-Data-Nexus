@@ -10,7 +10,6 @@ import os
 import shutil
 from contextlib import asynccontextmanager
 from typing import Optional, List, Dict, Any
-
 from fastapi import FastAPI, Request, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -22,13 +21,12 @@ from app.config import get_settings, Environment
 from app.logging_config import setup_logging, get_logger
 from app.exceptions import CognitiveNexusBaseException
 
-# Import our verified modular Phase 1-4 architecture services
+# Import our verified modular architecture services
 from app.services.document_processor import DocumentProcessorService
 from app.services.chunking_service import ChunkingService
 from app.services.embedding_service import EmbeddingService
 from app.services.vector_store import VectorStoreService
 from app.services.graph_service import KnowledgeGraphService
-from app.services.extraction_service import RuleBasedGraphExtractor
 from app.services.hybrid_search import HybridSearchService
 from app.services.llm_service import LocalLLMService
 
@@ -115,8 +113,9 @@ def create_app() -> FastAPI:
     chunker = ChunkingService(chunk_size=15, chunk_overlap=3)
     embedder = EmbeddingService()
     vector_db = VectorStoreService()
-    graph_db = KnowledgeGraphService()
-    extractor = RuleBasedGraphExtractor()
+    
+    # Combined NetworkX orchestration layer and Phase 2 SLM Engine
+    graph_db = KnowledgeGraphService() 
     
     hybrid_searcher = HybridSearchService(
         vector_store=vector_db, 
@@ -165,12 +164,12 @@ def create_app() -> FastAPI:
         return settings.to_dict()
     
     # ========================================================================
-    # FUSED PRODUCTION GRAPHRAG ENDPOINTS
+    # FUSED PRODUCTION GRAPHRAG ENDPOINTS (PHASE 2 UPDATED)
     # ========================================================================
     
     @app.post("/api/ingest")
     async def ingest_document(file: UploadFile = File(...)):
-        """Asynchronously parses, chunks, embeds, and indexes an uploaded document asset."""
+        """Asynchronously parses, chunks, embeds, and loops text layers through local SLM inference."""
         temp_path = os.path.join(UPLOAD_DIR, file.filename)
         try:
             with open(temp_path, "wb") as buffer:
@@ -183,23 +182,32 @@ def create_app() -> FastAPI:
             doc_id = f"doc_{int(os.path.getmtime(temp_path))}"
             chunks = chunker.create_chunks(document_id=doc_id, text=clean_text, metadata={"filename": file.filename})
 
+            # Vector Pipeline Processing
             raw_texts = [c.content for c in chunks]
             embeddings = embedder.generate_embeddings_batch(raw_texts)
             vector_db.upsert_chunks(chunks, embeddings)
 
-            for chunk in chunks:
-                nodes, relationships = extractor.extract_from_text(chunk.content)
-                for node in nodes:
-                    graph_db.add_entity(node)
-                for rel in relationships:
-                    graph_db.add_relationship(rel)
-            graph_db.save_graph()
-
-            logger.info(f"Successfully ingested file: {file.filename}, chunks: {len(chunks)}")
+            # Phase 2 Shift: Pass the full context to the SLM knowledge extractor
+            logger.info(f"[SLM INFERENCE] Dispatched context extraction array to phi3 loop...")
+            extraction_results = graph_db.extract_graph_via_slm(
+                document_id=doc_id,
+                document_name=file.filename,
+                raw_text=clean_text
+            )
+            
+            logger.info(
+                f"Successfully ingested file: {file.filename}, chunks: {len(chunks)}",
+                extra={
+                    "slm_nodes_added": extraction_results.get("nodes_added", 0),
+                    "slm_edges_added": extraction_results.get("edges_added", 0)
+                }
+            )
+            
             return {
                 "status": "success",
                 "document_id": doc_id,
                 "chunks_processed": len(chunks),
+                "slm_metrics": extraction_results,
                 "graph_metrics": {
                     "nodes": len(graph_db.graph.nodes),
                     "edges": len(graph_db.graph.edges)
@@ -214,7 +222,7 @@ def create_app() -> FastAPI:
 
     @app.post("/api/query")
     async def query_hybrid_engine(request: QueryRequest):
-        """Executes a dual-space RRF search and passes context vectors to local Llama3 inference."""
+        """Executes a dual-space RRF search and passes context vectors to local inference."""
         try:
             search_payload = hybrid_searcher.search(query=request.prompt, limit=request.limit)
             
